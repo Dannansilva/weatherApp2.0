@@ -77,15 +77,23 @@ class _HomepageState extends State<Homepage> {
             ),
           ),
 
-          // Bottom Container
+          // Bottom Container with Gradient
           Positioned(
-            bottom: containerOffset,
+            bottom: 0,
             left: 0,
             right: 0,
             child: Container(
-              height: 180,
+              height: containerOffset + 150,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFF48319D).withOpacity(0.9),
+                    Color(0xFF1F1D47).withOpacity(0.9),
+                    Color(0xFF1C1B33).withOpacity(1),
+                  ],
+                ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
@@ -109,17 +117,23 @@ class _HomepageState extends State<Homepage> {
                       children: [
                         Text(
                           "Hourly Forecast",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 18,
+                          ),
                         ),
                         Spacer(),
                         Text(
                           "Weekly Forecast",
-                          style: TextStyle(color: Colors.white, fontSize: 18),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 18,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  Divider(),
+                  Divider(color: Colors.white38),
                 ],
               ),
             ),
