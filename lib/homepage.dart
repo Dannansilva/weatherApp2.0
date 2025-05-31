@@ -147,6 +147,36 @@ class _HomepageState extends State<Homepage> {
                       ),
                     ],
                   ),
+                  Spacer(),
+
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // location icon
+                        Icon(
+                          Icons.location_on,
+                          color: Colors.white.withOpacity(0.8),
+                          size: 30,
+                        ),
+                        // add icon
+                        Icon(
+                          Icons.add_circle,
+                          color: Colors.white.withOpacity(0.8),
+                          size: 60,
+                        ),
+
+                        //menu icon
+                        Icon(
+                          Icons.menu,
+                          color: Colors.white.withOpacity(0.8),
+                          size: 30,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 10),
                 ],
               ),
             ),
