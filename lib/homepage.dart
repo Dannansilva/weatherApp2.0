@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:weather_app/widgets/hourly_forcast.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -22,6 +23,7 @@ class _HomepageState extends State<Homepage> {
             height: double.infinity,
             width: double.infinity,
             decoration: const BoxDecoration(
+              //background img
               image: DecorationImage(
                 image: AssetImage('assets/background.png'),
                 fit: BoxFit.cover,
@@ -134,6 +136,17 @@ class _HomepageState extends State<Homepage> {
                     ),
                   ),
                   Divider(color: Colors.white38),
+                  //row of weather
+                  Row(
+                    children: [
+                      // Hourly Weather Data side scrollable
+                      Expanded(
+                        child: HourlyForecastWidget(
+                          hourlyData: HourlyWeatherHelper.getSampleData(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
