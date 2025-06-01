@@ -1,176 +1,291 @@
 import 'package:flutter/material.dart';
+import 'package:weather_app/services/weather_service.dart';
+import 'package:intl/intl.dart';
 
 class HourlyForecastWidget extends StatelessWidget {
-  final List<HourlyWeatherData> hourlyData;
+  final List<HourlyWeather> hourlyData;
 
-  const HourlyForecastWidget({super.key, required this.hourlyData});
+  const HourlyForecastWidget({Key? key, required this.hourlyData})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: Row(
-        children:
-            hourlyData.asMap().entries.map((entry) {
-              final index = entry.key;
-              final data = entry.value;
-              final isFirst = index == 0;
-
-              return Padding(
-                padding: const EdgeInsets.only(right: 12.0),
-                child: Container(
-                  width: 60,
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors:
-                          isFirst
-                              ? [Colors.deepPurpleAccent, Colors.indigoAccent]
-                              : [Colors.white10, Colors.white12],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                    borderRadius: BorderRadius.circular(25),
-                    border:
-                        isFirst
-                            ? Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 1,
-                            )
-                            : null,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Time
-                      Text(
-                        data.time,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Weather Icon
-                      if (data.iconPath != null)
-                        Image.asset(data.iconPath!, width: 28, height: 28)
-                      else
-                        Icon(
-                          data.weatherIcon ?? Icons.wb_sunny,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-
-                      const SizedBox(height: 8),
-
-                      // Rain percentage (if exists)
-                      if (data.rainPercentage != null &&
-                          data.rainPercentage! > 0)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            "${data.rainPercentage}%",
-                            style: TextStyle(
-                              color: Colors.lightBlue.shade200,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-
-                      // Temperature
-                      Text(
-                        "${data.temperature}°",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+    return Container(
+      height: 120,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: hourlyData.length,
+        itemBuilder: (context, index) {
+          final hourWeather = hourlyData[index];
+          return _buildHourlyItem(hourWeather, index == 0);
+        },
       ),
     );
   }
+
+  Widget _buildHourlyItem(HourlyWeather weather, bool isFirst) {
+    return Container(
+      margin: const EdgeInsets.only(right: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Time
+          Text(
+            isFirst ? 'Now' : _formatTime(weather.time),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+
+          // Weather Icon
+          _buildWeatherIcon(weather.icon),
+
+          // Temperature
+          Text(
+            '${weather.temperature.round()}°',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          // Humidity indicator
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.water_drop,
+                color: Colors.blue.withOpacity(0.7),
+                size: 10,
+              ),
+              const SizedBox(width: 2),
+              Text(
+                '${weather.humidity}%',
+                style: TextStyle(
+                  color: Colors.blue.withOpacity(0.8),
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherIcon(String iconCode) {
+    // Map of weather icon codes to Flutter icons
+    IconData getIconFromCode(String code) {
+      switch (code) {
+        case '01d':
+        case '01n':
+          return Icons.wb_sunny;
+        case '02d':
+        case '02n':
+          return Icons.wb_cloudy;
+        case '03d':
+        case '03n':
+        case '04d':
+        case '04n':
+          return Icons.cloud;
+        case '09d':
+        case '09n':
+        case '10d':
+        case '10n':
+          return Icons.grain;
+        case '11d':
+        case '11n':
+          return Icons.thunderstorm;
+        case '13d':
+        case '13n':
+          return Icons.ac_unit;
+        case '50d':
+        case '50n':
+          return Icons.foggy;
+        default:
+          return Icons.wb_sunny;
+      }
+    }
+
+    Color getIconColor(String code) {
+      switch (code) {
+        case '01d':
+        case '01n':
+          return Colors.yellow.shade300;
+        case '02d':
+        case '02n':
+        case '03d':
+        case '03n':
+        case '04d':
+        case '04n':
+          return Colors.grey.shade300;
+        case '09d':
+        case '09n':
+        case '10d':
+        case '10n':
+          return Colors.blue.shade300;
+        case '11d':
+        case '11n':
+          return Colors.purple.shade300;
+        case '13d':
+        case '13n':
+          return Colors.white;
+        case '50d':
+        case '50n':
+          return Colors.grey.shade400;
+        default:
+          return Colors.white;
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(
+        getIconFromCode(iconCode),
+        color: getIconColor(iconCode),
+        size: 24,
+      ),
+    );
+  }
+
+  String _formatTime(DateTime time) {
+    final now = DateTime.now();
+    final formatter = DateFormat('HH:mm');
+
+    // If it's the same day, show just the time
+    if (time.day == now.day) {
+      return formatter.format(time);
+    }
+
+    // If it's tomorrow, show "Tomorrow HH:mm"
+    if (time.day == now.day + 1) {
+      return 'Tom ${formatter.format(time)}';
+    }
+
+    // Otherwise show day abbreviation and time
+    return '${DateFormat('E').format(time)} ${formatter.format(time)}';
+  }
 }
 
-// Data model for hourly weather
-class HourlyWeatherData {
-  final String time;
-  final int temperature;
-  final String? iconPath; // For custom weather icons
-  final IconData? weatherIcon; // For Material icons
-  final int? rainPercentage;
-  final String? condition;
+// Alternative version with network images (if you prefer to use OpenWeatherMap icons)
+class HourlyForecastWithNetworkIcons extends StatelessWidget {
+  final List<HourlyWeather> hourlyData;
 
-  HourlyWeatherData({
-    required this.time,
-    required this.temperature,
-    this.iconPath,
-    this.weatherIcon,
-    this.rainPercentage,
-    this.condition,
-  });
-}
+  const HourlyForecastWithNetworkIcons({Key? key, required this.hourlyData})
+    : super(key: key);
 
-// Helper class to generate sample data
-class HourlyWeatherHelper {
-  static List<HourlyWeatherData> getSampleData() {
-    return [
-      HourlyWeatherData(
-        time: "Now",
-        temperature: 19,
-        weatherIcon: Icons.cloud,
-        rainPercentage: 30,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 120,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: hourlyData.length,
+        itemBuilder: (context, index) {
+          final hourWeather = hourlyData[index];
+          return _buildHourlyItemWithNetworkIcon(hourWeather, index == 0);
+        },
       ),
-      HourlyWeatherData(
-        time: "2 AM",
-        temperature: 19,
-        weatherIcon: Icons.cloud,
-        rainPercentage: 0,
+    );
+  }
+
+  Widget _buildHourlyItemWithNetworkIcon(HourlyWeather weather, bool isFirst) {
+    return Container(
+      margin: const EdgeInsets.only(right: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
       ),
-      HourlyWeatherData(
-        time: "3 AM",
-        temperature: 18,
-        weatherIcon: Icons.grain, // rain icon
-        rainPercentage: 0,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Time
+          Text(
+            isFirst ? 'Now' : _formatTime(weather.time),
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.8),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+
+          // Weather Icon from network
+          Image.network(
+            'https://openweathermap.org/img/wn/${weather.icon}@2x.png',
+            width: 40,
+            height: 40,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(
+                Icons.wb_sunny,
+                color: Colors.white.withOpacity(0.8),
+                size: 32,
+              );
+            },
+          ),
+
+          // Temperature
+          Text(
+            '${weather.temperature.round()}°',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          // Humidity indicator
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.water_drop,
+                color: Colors.blue.withOpacity(0.7),
+                size: 10,
+              ),
+              const SizedBox(width: 2),
+              Text(
+                '${weather.humidity}%',
+                style: TextStyle(
+                  color: Colors.blue.withOpacity(0.8),
+                  fontSize: 10,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
-      HourlyWeatherData(
-        time: "4 AM",
-        temperature: 19,
-        weatherIcon: Icons.cloud,
-        rainPercentage: 0,
-      ),
-      HourlyWeatherData(
-        time: "5 AM",
-        temperature: 19,
-        weatherIcon: Icons.cloud,
-        rainPercentage: 0,
-      ),
-      HourlyWeatherData(
-        time: "6 AM",
-        temperature: 20,
-        weatherIcon: Icons.wb_sunny,
-        rainPercentage: 0,
-      ),
-      HourlyWeatherData(
-        time: "7 AM",
-        temperature: 21,
-        weatherIcon: Icons.wb_sunny,
-        rainPercentage: 0,
-      ),
-      HourlyWeatherData(
-        time: "8 AM",
-        temperature: 22,
-        weatherIcon: Icons.wb_sunny,
-        rainPercentage: 0,
-      ),
-    ];
+    );
+  }
+
+  String _formatTime(DateTime time) {
+    final now = DateTime.now();
+    final formatter = DateFormat('HH:mm');
+
+    if (time.day == now.day) {
+      return formatter.format(time);
+    }
+
+    if (time.day == now.day + 1) {
+      return 'Tom ${formatter.format(time)}';
+    }
+
+    return '${DateFormat('E').format(time)} ${formatter.format(time)}';
   }
 }
