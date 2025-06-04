@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:weather_app/weather_screen.dart';
 import 'package:weather_app/widgets/hourly_forcast.dart';
 import 'package:weather_app/services/weather_service.dart';
+import 'package:weather_app/widgets/location_picker.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -14,6 +16,7 @@ class _HomepageState extends State<Homepage> {
   WeatherData? _currentWeather;
   List<HourlyWeather> _hourlyForecast = [];
   List<DailyWeather> _dailyForecast = [];
+  List<WeatherData> _savedLocations = []; // Add this missing declaration
   bool _isLoading = true;
   String _errorMessage = '';
   bool _isLocationBased = false;
@@ -87,6 +90,59 @@ class _HomepageState extends State<Homepage> {
 
       _showErrorDialog(e.toString());
     }
+  }
+
+  // New method to show location picker
+  void _showLocationPicker() {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder:
+          (context) => LocationPickerModal(
+            onLocationSelected: (weatherData) {
+              setState(() {
+                _savedLocations.add(weatherData);
+              });
+              _showSuccessMessage(
+                '${weatherData.cityName} added successfully!',
+              );
+            },
+          ),
+    );
+  }
+
+  void _showSuccessMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Text(message),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _navigateToWeatherMenu() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder:
+            (context) => WeatherMenuScreen(
+              savedLocations: _savedLocations,
+              onLocationRemoved: (index) {
+                setState(() {
+                  _savedLocations.removeAt(index);
+                });
+              },
+            ),
+      ),
+    );
   }
 
   Future<Map<String, dynamic>> _getMockWeatherData() async {
@@ -290,126 +346,82 @@ class _HomepageState extends State<Homepage> {
                     children: [
                       // Top weather info
                       Container(
-                        height: screenHeight * 0.6,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Location indicator
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  _isLocationBased
-                                      ? Icons.location_on
-                                      : Icons.location_off,
-                                  color: Colors.white70,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _isLocationBased
-                                      ? 'Current Location'
-                                      : 'Default Location',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-
-                            // City name
-                            Text(
-                              _currentWeather!.cityName,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-
-                            // Temperature
-                            Text(
-                              _weatherService.formatTemperature(
-                                _currentWeather!.temperature,
-                              ),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 64,
-                                fontWeight: FontWeight.w300,
-                              ),
-                            ),
-
-                            // Description
-                            Text(
-                              _currentWeather!.description.toUpperCase(),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            // High/Low temperatures
-                            Text(
-                              "H:${_weatherService.formatTemperature(_currentWeather!.tempMax)}  L:${_weatherService.formatTemperature(_currentWeather!.tempMin)}",
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.8),
-                                fontSize: 16,
-                              ),
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // Additional weather info
-                            Container(
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 40,
-                              ),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(15),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 30.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Location indicator
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  _buildWeatherDetail(
-                                    'Feels like',
-                                    '${_currentWeather!.feelsLike.round()}°C',
-                                    Icons.thermostat,
+                                  Icon(
+                                    _isLocationBased
+                                        ? Icons.location_on
+                                        : Icons.location_off,
+                                    color: Colors.white70,
+                                    size: 16,
                                   ),
-                                  Container(
-                                    height: 40,
-                                    width: 1,
-                                    color: Colors.white.withOpacity(0.3),
-                                  ),
-                                  _buildWeatherDetail(
-                                    'Humidity',
-                                    '${_currentWeather!.humidity}%',
-                                    Icons.water_drop,
-                                  ),
-                                  Container(
-                                    height: 40,
-                                    width: 1,
-                                    color: Colors.white.withOpacity(0.3),
-                                  ),
-                                  _buildWeatherDetail(
-                                    'Wind',
-                                    '${_currentWeather!.windSpeed.toStringAsFixed(1)} m/s',
-                                    Icons.air,
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _isLocationBased
+                                        ? 'Current Location'
+                                        : 'Default Location',
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 8),
+
+                              // City name
+                              Text(
+                                _currentWeather!.cityName,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              // Temperature
+                              Text(
+                                _weatherService.formatTemperature(
+                                  _currentWeather!.temperature,
+                                ),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 64,
+                                  fontWeight: FontWeight.w300,
+                                ),
+                              ),
+
+                              // Description
+                              Text(
+                                _currentWeather!.description.toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              // High/Low temperatures
+                              Text(
+                                "H:${_weatherService.formatTemperature(_currentWeather!.tempMax)}  L:${_weatherService.formatTemperature(_currentWeather!.tempMin)}",
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.8),
+                                  fontSize: 16,
+                                ),
+                              ),
+
+                              const SizedBox(height: 20),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -429,7 +441,7 @@ class _HomepageState extends State<Homepage> {
                     width: 500,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      return Container(); // Hide if image doesn't exist
+                      return Container();
                     },
                   ),
                 ),
@@ -551,54 +563,62 @@ class _HomepageState extends State<Homepage> {
 
                           // Refresh/Add icon
                           GestureDetector(
-                            onTap: _loadWeatherData,
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(30),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.2),
-                                ),
-                              ),
-                              child: Icon(
-                                Icons.refresh,
-                                color: Colors.white.withOpacity(0.9),
-                                size: 28,
-                              ),
+                            onTap: _showLocationPicker,
+                            child: Icon(
+                              Icons.add_circle,
+                              color: Colors.white.withOpacity(0.9),
+                              size: 50,
                             ),
                           ),
 
                           // Menu icon
                           GestureDetector(
-                            onTap: () {
-                              // Add menu functionality here
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Menu functionality coming soon!',
-                                  ),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            },
+                            onTap: _navigateToWeatherMenu,
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
-                              child: Icon(
-                                Icons.menu,
-                                color: Colors.white.withOpacity(0.8),
-                                size: 24,
+                              child: Stack(
+                                children: [
+                                  Icon(
+                                    Icons.menu,
+                                    color: Colors.white.withOpacity(0.8),
+                                    size: 24,
+                                  ),
+                                  if (_savedLocations.isNotEmpty)
+                                    Positioned(
+                                      right: 0,
+                                      top: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 16,
+                                          minHeight: 16,
+                                        ),
+                                        child: Text(
+                                          '${_savedLocations.length}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
                   ],
                 ),
               ),
